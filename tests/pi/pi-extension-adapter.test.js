@@ -363,19 +363,29 @@ async function main() {
       assert.ok(
         runtimeSource.includes("process.versions?.bun") &&
           runtimeSource.includes("path.basename(execPath)") &&
-          runtimeSource.includes('return override?.trim() || (isNodeRuntime ? execPath : "node")'),
-        "expected the selector to reject Bun/OMP runtimes, support explicit overrides, and " +
+          runtimeSource.includes("path.isAbsolute(overridePath)") &&
+          runtimeSource.includes(
+            'throw new Error("ECC_HOOK_NODE must be an absolute path: " + overridePath)'
+          ),
+        "expected the selector to reject Bun/OMP runtimes, require absolute overrides, and " +
           "fall back to PATH node"
       )
     }],
 
     ["resolves hook runtimes across Node, compiled OMP, and explicit override cases", () => {
-      assert.strictEqual(resolveHookRuntime({ execPath: "/usr/bin/node" }), "/usr/bin/node")
-      assert.strictEqual(resolveHookRuntime({ execPath: "/usr/bin/nodejs" }), "/usr/bin/nodejs")
+      assert.strictEqual(
+        resolveHookRuntime({ execPath: "/usr/bin/node", override: "" }),
+        "/usr/bin/node"
+      )
+      assert.strictEqual(
+        resolveHookRuntime({ execPath: "/usr/bin/nodejs", override: "" }),
+        "/usr/bin/nodejs"
+      )
       assert.strictEqual(
         resolveHookRuntime({
           execPath: "/usr/bin/node",
           bunVersion: "1.4.0",
+          override: "",
         }),
         "node"
       )
@@ -383,6 +393,7 @@ async function main() {
         resolveHookRuntime({
           execPath: "/usr/bin/node",
           releaseName: "bun",
+          override: "",
         }),
         "node"
       )
@@ -390,8 +401,17 @@ async function main() {
         resolveHookRuntime({
           execPath: "/home/user/.omp/bin/omp",
           releaseName: "node",
+          override: "",
         }),
         "node"
+      )
+      assert.throws(
+        () =>
+          resolveHookRuntime({
+            execPath: "/usr/bin/node",
+            override: "./node",
+          }),
+        /ECC_HOOK_NODE must be an absolute path: \.\/node/
       )
       assert.strictEqual(
         resolveHookRuntime({

@@ -5,7 +5,8 @@ const path = require("node:path")
  *
  * Compiled OMP/Bun exposes a Node-compatible process.release.name, but its
  * process.execPath points to the OMP launcher. Use PATH node in that case;
- * ECC_HOOK_NODE provides an explicit path for systems without Node on PATH.
+ * ECC_HOOK_NODE provides an explicit absolute path for systems without Node
+ * on PATH.
  */
 function resolveHookRuntime({
   execPath = process.execPath,
@@ -17,7 +18,14 @@ function resolveHookRuntime({
     releaseName === "node" &&
     !bunVersion &&
     /^(?:node|nodejs)(?:\.exe)?$/i.test(path.basename(execPath))
-  return override?.trim() || (isNodeRuntime ? execPath : "node")
+  const overridePath = override?.trim()
+  if (overridePath) {
+    if (!path.isAbsolute(overridePath)) {
+      throw new Error("ECC_HOOK_NODE must be an absolute path: " + overridePath)
+    }
+    return overridePath
+  }
+  return isNodeRuntime ? execPath : "node"
 }
 
 module.exports = { resolveHookRuntime }
