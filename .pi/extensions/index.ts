@@ -15,8 +15,10 @@
  * Design constraints (see .pi/README.md):
  *   - Hooks resolve relative to THIS file, never `process.cwd()`, so a global
  *     `pi install` works from any project directory.
- *   - Hooks execute via `execFile(process.execPath, [...])` with no shell, so
- *     paths containing spaces or shell metacharacters are safe.
+ *   - Hooks execute via `execFile(HOOK_RUNTIME, [...])` with no shell, so paths
+ *     containing spaces or shell metacharacters are safe. The hook runtime is
+ *     selected separately because compiled OMP/Bun may report a Node-compatible
+ *     release name while `process.execPath` points back to `omp`.
  *   - Hook failures are isolated: a broken, missing, or slow hook degrades to a
  *     warning and never terminates the Pi session.
  */
@@ -25,6 +27,7 @@ import { execFile } from "node:child_process"
 import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
+import { resolveHookRuntime } from "./hook-runtime.js"
 
 /**
  * Minimal structural types mirroring `@earendil-works/pi-coding-agent`.
@@ -105,6 +108,7 @@ const ECC_ROOT = path.resolve(__dirname, "..", "..")
 
 /** ECC's universal hook runner. It applies hook-profile and disable flags. */
 const HOOK_RUNNER = path.join(ECC_ROOT, "scripts", "hooks", "run-with-flags.js")
+const HOOK_RUNTIME = resolveHookRuntime()
 
 const HOOK_TIMEOUT_MS = 30_000
 const MAX_HOOK_OUTPUT_BYTES = 1024 * 1024
@@ -191,7 +195,7 @@ function runEccHook(
     }
 
     const child = execFile(
-      process.execPath,
+      HOOK_RUNTIME,
       [HOOK_RUNNER, spec.id, spec.script, spec.profiles],
       {
         // Hooks inspect the user's project, so they run there. Only the script
