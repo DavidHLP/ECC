@@ -99,11 +99,10 @@ The `extensions/index.ts` file handles:
 All hook execution is non-shell (`execFile` without shell interpretation), so paths containing
 spaces, tabs, or shell metacharacters are safe.
 
-Hook runtime selection is defensive: a normal Node process uses its own
-`process.execPath`, while compiled OMP/Bun falls back to `node` instead of
-recursively launching the OMP binary as a hook runner. Set `ECC_HOOK_NODE` to
-an explicit absolute Node executable path when `node` is not available on
-`PATH`.
+Hook runtime selection uses the host `process.execPath` only under Node.
+Compiled OMP/Bun falls back to `node` instead of recursively launching the OMP
+binary as a hook runner. Set `ECC_HOOK_NODE` to an explicit absolute Node
+executable path when `node` is not available on `PATH`.
 
 ## Scope
 

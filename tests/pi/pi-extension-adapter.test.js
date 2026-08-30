@@ -73,9 +73,9 @@ function stripComments(source) {
 }
 
 /**
- * Mirrors the adapter's hook invocation (`runEccHook` in
- * .pi/extensions/index.ts): the test host's Node executable, the same argv
- * shape, the same stdin-JSON payload, and the same env keys. No shell is used.
+ * Invokes ECC's hook runner like the adapter (`runEccHook` in
+ * .pi/extensions/index.ts): it uses the test host's Node executable with the
+ * same argv shape and JSON payload on stdin. No shell is used.
  */
 function runHookRunner(eccRoot, hookId, relScript, profiles, payload, extraEnv, cwd) {
   const runner = path.join(eccRoot, "scripts", "hooks", "run-with-flags.js")

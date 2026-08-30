@@ -17,8 +17,9 @@
  *     `pi install` works from any project directory.
  *   - Hooks execute via `execFile(HOOK_RUNTIME, [...])` with no shell, so paths
  *     containing spaces or shell metacharacters are safe. The hook runtime is
- *     selected separately because compiled OMP/Bun may report a Node-compatible
- *     release name while `process.execPath` points back to `omp`.
+ *     selected separately because compiled OMP may report `process.release.name`
+ *     as `node` while `process.execPath` points back to `omp`; Bun is detected
+ *     separately via `process.versions.bun`.
  *   - Hook failures are isolated: a broken, missing, or slow hook degrades to a
  *     warning and never terminates the Pi session.
  */

@@ -3,10 +3,10 @@ const path = require("node:path")
 /**
  * Select a real Node executable for hook scripts.
  *
- * Compiled OMP/Bun exposes a Node-compatible process.release.name, but its
- * process.execPath points to the OMP launcher. Use PATH node in that case;
- * ECC_HOOK_NODE provides an explicit absolute path for systems without Node
- * on PATH.
+ * Compiled OMP may report `process.release.name` as `node` even though its
+ * `process.execPath` points to the OMP launcher. Bun is detected separately via
+ * `process.versions.bun`; both fall back to `node` unless `ECC_HOOK_NODE`
+ * supplies an explicit absolute path.
  */
 function resolveHookRuntime({
   execPath = process.execPath,
