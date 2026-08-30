@@ -323,8 +323,8 @@ async function main() {
         "expected the adapter to invoke hooks via child_process.execFile(...)"
       )
       assert.ok(
-        extensionSource.includes("HOOK_RUNTIME"),
-        "expected the adapter to pass its selected hook runtime to execFile(...)"
+        extensionSource.includes("resolveHookRuntime"),
+        "expected the adapter to select a hook runtime before execFile(...)"
       )
 
       const shellExecPattern = /(?<!execFile)\bexec\s*\(/
@@ -351,14 +351,20 @@ async function main() {
         path.join(repoRoot, ".pi", "extensions", "hook-runtime.js"),
         "utf8"
       )
+      const runHookStart = extensionSource.indexOf("function runEccHook")
+      const runHookEnd = extensionSource.indexOf("function resolveHookCwd")
+      const runHookSource = extensionSource.slice(runHookStart, runHookEnd)
+      const beforeRunHookSource = extensionSource.slice(0, runHookStart)
       assert.ok(
         extensionSource.includes('from "./hook-runtime.js"'),
         "expected the adapter to import the shared hook runtime selector"
       )
       assert.ok(
-        /execFile\(\s*HOOK_RUNTIME,/.test(extensionSource),
-        "expected runEccHook to invoke the runner with HOOK_RUNTIME rather than always using " +
-          "the host process.execPath"
+        !beforeRunHookSource.includes("resolveHookRuntime()") &&
+          /try\s*\{\s*hookRuntime = resolveHookRuntime\(\)\s*\}\s*catch/.test(runHookSource) &&
+          /execFile\(\s*hookRuntime,/.test(runHookSource),
+        "expected runEccHook to resolve its runtime inside the guarded hook path rather than " +
+          "during module initialization"
       )
       assert.ok(
         runtimeSource.includes("process.versions?.bun") &&

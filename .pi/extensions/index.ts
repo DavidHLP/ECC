@@ -15,13 +15,13 @@
  * Design constraints (see .pi/README.md):
  *   - Hooks resolve relative to THIS file, never `process.cwd()`, so a global
  *     `pi install` works from any project directory.
- *   - Hooks execute via `execFile(HOOK_RUNTIME, [...])` with no shell, so paths
+ *   - Hooks execute via `execFile(hookRuntime, [...])` with no shell, so paths
  *     containing spaces or shell metacharacters are safe. The hook runtime is
  *     selected separately because compiled OMP may report `process.release.name`
  *     as `node` while `process.execPath` points back to `omp`; Bun is detected
  *     separately via `process.versions.bun`.
- *   - Hook failures are isolated: a broken, missing, or slow hook degrades to a
- *     warning and never terminates the Pi session.
+ *   - Hook failures are isolated: a broken, missing, slow, or misconfigured hook
+ *     degrades to a warning and never terminates the Pi session.
  */
 
 import { execFile } from "node:child_process"
@@ -109,7 +109,6 @@ const ECC_ROOT = path.resolve(__dirname, "..", "..")
 
 /** ECC's universal hook runner. It applies hook-profile and disable flags. */
 const HOOK_RUNNER = path.join(ECC_ROOT, "scripts", "hooks", "run-with-flags.js")
-const HOOK_RUNTIME = resolveHookRuntime()
 
 const HOOK_TIMEOUT_MS = 30_000
 const MAX_HOOK_OUTPUT_BYTES = 1024 * 1024
@@ -180,8 +179,9 @@ interface HookResult {
 /**
  * Run an ECC hook through ECC's own runner.
  *
- * Never rejects: a missing runner, a non-zero exit, a timeout, or a spawn error
- * all resolve to a `failure` string that the caller surfaces as a warning.
+ * Never rejects: an invalid runtime override, a missing runner, a non-zero exit,
+ * a timeout, or a spawn error all resolve to a `failure` string that the caller
+ * surfaces as a warning.
  */
 function runEccHook(
   spec: HookSpec,
@@ -194,9 +194,19 @@ function runEccHook(
       resolve({ stdout: "", failure: `hook runner not found at ${HOOK_RUNNER}` })
       return
     }
+    let hookRuntime: string
+    try {
+      hookRuntime = resolveHookRuntime()
+    } catch (error) {
+      resolve({
+        stdout: "",
+        failure: `${spec.id}: ${(error as Error).message}`,
+      })
+      return
+    }
 
     const child = execFile(
-      HOOK_RUNTIME,
+      hookRuntime,
       [HOOK_RUNNER, spec.id, spec.script, spec.profiles],
       {
         // Hooks inspect the user's project, so they run there. Only the script
