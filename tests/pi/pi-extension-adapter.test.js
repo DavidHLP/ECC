@@ -49,6 +49,7 @@ const { resolveHookRuntime } = require(
   path.join(__dirname, "..", "..", ".pi", "extensions", "hook-runtime.js")
 )
 
+/** Run a single adapter test and report the result. */
 async function runTest(name, fn) {
   try {
     await fn()
@@ -286,6 +287,7 @@ function isDisabledByEnvMirror(value) {
   return typeof value === "string" && DISABLED_VALUES_MIRROR.has(value.trim().toLowerCase())
 }
 
+/** Run the Pi adapter regression suite. */
 async function main() {
   console.log("\n=== Testing .pi/extensions/index.ts (Pi thin adapter) ===\n")
 

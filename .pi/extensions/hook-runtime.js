@@ -7,6 +7,10 @@ const path = require("node:path")
  * `process.execPath` points to the OMP launcher. Bun is detected separately via
  * `process.versions.bun`; both fall back to `node` unless `ECC_HOOK_NODE`
  * supplies an explicit absolute path.
+ *
+ * @param options - Runtime metadata and an optional absolute Node override.
+ * @returns The executable path to use for hook scripts.
+ * @throws {Error} If the hook runtime override is non-empty and relative.
  */
 function resolveHookRuntime({
   execPath = process.execPath,
